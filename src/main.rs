@@ -1,8 +1,8 @@
+use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use std::fs;
 use std::io::{self, Write};
 use std::sync::mpsc;
 use std::time::Duration;
-use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 
 // Update index.html file with the new images
 fn update_html() -> io::Result<()> {
@@ -15,14 +15,16 @@ fn update_html() -> io::Result<()> {
     writeln!(
         output_file,
         "<html><head><title>Image Gallery</title></head><body><div style=\"text-align:center;\">"
-    ).expect("Failed to write HTML header");
+    )
+    .expect("Failed to write HTML header");
 
     // Iterate over all files in the image directory
     if let Ok(files) = fs::read_dir(folder_path) {
         for file in files {
             if let Ok(file) = file {
                 let path = file.path();
-                if let Some(extension) = path.extension() { // Check if the file has an extension
+                if let Some(extension) = path.extension() {
+                    // Check if the file has an extension
                     if extension.to_string_lossy().to_lowercase() == "jpg"
                         || extension.to_string_lossy().to_lowercase() == "jpeg"
                         || extension.to_string_lossy().to_lowercase() == "png"
@@ -45,7 +47,8 @@ fn update_html() -> io::Result<()> {
                 }
             }
         }
-    }else { // If the image directory doesn't exist
+    } else {
+        // If the image directory doesn't exist
         println!("Failed to read image directory")
     }
 
@@ -77,38 +80,46 @@ fn main() {
         .watch(folder_path.as_ref(), RecursiveMode::Recursive)
         .expect("Failed to watch folder");
 
-    println!("Watching for new pictures in: {}", folder_path);
+    println!("Watching for changes in: {}", folder_path);
 
     // Main loop to handle events
     loop {
-        match rx.recv() { // Wait for an event to be received
-            Ok(events) => { // If an event is received
-                match events { // Match the event type received from the watcher
-                    Ok(notify::Event { // If a create event is received, update the HTML file
+        match rx.recv() {
+            // Wait for an event to be received
+            Ok(events) => {
+                // If an event is received
+                match events {
+                    // Match the event type received from the watcher
+                    Ok(notify::Event {
+                        // If a create event is received, update the HTML file
                         kind: EventKind::Create(notify::event::CreateKind::File),
                         ..
                     }) => {
                         update_html().expect("Error writing to index.html");
                     }
-                    Ok(notify::Event { // If a remove event is received, update the HTML file
-                           kind: EventKind::Remove(notify::event::RemoveKind::File),
-                           ..
-                       }) => {
+                    Ok(notify::Event {
+                        // If a remove event is received, update the HTML file
+                        kind: EventKind::Remove(notify::event::RemoveKind::File),
+                        ..
+                    }) => {
                         update_html().expect("Error writing to index.html");
                     }
-                    Ok(notify::Event { // If a modify event is received, update the HTML file
-                           kind: EventKind::Modify(notify::event::ModifyKind::Any),
-                           ..
-                       }) => {
+                    Ok(notify::Event {
+                        // If a modify event is received, update the HTML file
+                        kind: EventKind::Modify(notify::event::ModifyKind::Any),
+                        ..
+                    }) => {
                         update_html().expect("Error writing to index.html");
                     }
-                    Err(e) => { // If an error occurs, print the error
+                    Err(e) => {
+                        // If an error occurs, print the error
                         println!("Error: {:?}", e);
                     }
                     _ => {} // Ignore other events
                 }
             }
-            Err(e) => { // If an error occurs, print the error
+            Err(e) => {
+                // If an error occurs, print the error
                 println!("Error: {:?}", e);
             }
         }
